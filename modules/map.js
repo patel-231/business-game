@@ -6,7 +6,7 @@ export const map = {
     markers: [],
     
     initMap(containerId, apiKey) {
-        if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY") {
+        if (!apiKey || apiKey === "AIzaSyAN5qlDYKr2WGIqBuztQDpBaY1sx8L0Ao0") {
             console.log("No valid Google Maps API Key found. Using placeholder graphics.");
             this.gMap = "placeholder"; // For testing
             return;

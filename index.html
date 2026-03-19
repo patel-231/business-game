@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizSim | Business Empire Tycoon</title>
+    <title>BizSim | Advanced Business Empire</title>
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <!-- Icon Library: Lucide -->
@@ -121,11 +121,13 @@
         </div>
     </div>
 
-    <!-- Modals (Simple overlays for interactions) -->
-    <div id="modal-container" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="glass-panel" style="max-width: 500px; width: 90%; max-height: 80vh;">
-            <div id="modal-content"></div>
-            <button class="secondary" onclick="closeModal()" style="margin-top: 1.5rem;">Close</button>
+    <div id="toast-container"></div>
+
+    <div id="travel-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <h2 id="travel-msg">Travelling...</h2>
+        <div class="progress-container" style="width: 300px;">
+            <div id="travel-progress" class="progress-bar" style="width: 0%"></div>
         </div>
     </div>
 

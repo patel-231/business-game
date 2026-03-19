@@ -1,112 +1,129 @@
 /**
- * Main Controller for BizSim Game
+ * Main Controller for BizSim Advanced Upgrade
  */
-import { gameState } from './modules/gameState.js';
-import { production } from './modules/production.js';
+import { inventory } from './modules/inventory.js';
+import { ui } from './modules/ui.js';
+import { transactions } from './modules/transactions.js';
 import { market } from './modules/market.js';
-import { vehicles } from './modules/vehicles.js';
 import { map } from './modules/map.js';
+import { production } from './modules/production.js';
 
-// Init
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    gameState.load();
-    updateUI();
+    inventory.load();
+    updateDashboard();
     
-    // Subscribe UI to state changes
-    gameState.subscribe(updateUI);
-    
-    // Start systems
+    // Systems Start
     market.updatePrices();
     production.update();
     
-    // UI Event Listeners
-    document.getElementById('open-device').addEventListener('click', toggleDevice);
-    document.getElementById('buy-raw-btn').addEventListener('click', showMarketModal);
+    // Global Loop for UI Refresh (Throttle)
+    setInterval(() => {
+        updateDashboard();
+    }, 1000);
     
-    // Placeholder Map Init
+    // Initial Map Setup
     map.initMap('map-container', 'YOUR_GOOGLE_MAPS_API_KEY');
+    
+    // Event Delegation
+    document.body.addEventListener('click', handleGlobalClick);
 });
 
-function updateUI() {
-    // Top Stats
-    document.getElementById('money-display').textContent = `$${gameState.money.toLocaleString()}`;
-    const stockCount = Object.values(gameState.inventory.products).reduce((a, b) => a + b, 0);
-    document.getElementById('stock-display').textContent = `${stockCount} Units`;
-    document.getElementById('time-display').textContent = `Day ${gameState.time.day} | ${String(gameState.time.hour).padStart(2, '0')}:00`;
-
-    // Factory Content
-    const factoryContent = document.getElementById('factory-content');
-    const noBizMessage = document.getElementById('no-biz-message');
+function handleGlobalClick(e) {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
     
-    if (gameState.activeBusiness) {
-        factoryContent.style.display = 'block';
-        noBizMessage.style.display = 'none';
-        renderFactory();
-        renderInventory();
-    } else {
-        factoryContent.style.display = 'none';
-        noBizMessage.style.display = 'block';
+    const action = target.getAttribute('data-action');
+    const item = target.getAttribute('data-item');
+    const price = target.getAttribute('data-price');
+    const type = target.getAttribute('data-type');
+    
+    switch(action) {
+        case 'open-device': toggleDevice(); break;
+        case 'buy-init': 
+            ui.openQuantityModal(item, price, 'buy', (qty) => {
+                transactions.buy(type || 'raw', item, qty, price, updateDashboard);
+            });
+            break;
+        case 'sell-init': 
+            ui.openQuantityModal(item, price, 'sell', (qty) => {
+                transactions.sell(type || 'products', item, qty, price, updateDashboard);
+            });
+            break;
     }
+}
 
-    // Market UI
+function updateDashboard() {
+    // Money
+    document.getElementById('money-display').textContent = `$${(inventory.money || 0).toLocaleString()}`;
+    
+    // Time
+    document.getElementById('time-display').textContent = `Day ${inventory.time.day} | ${String(inventory.time.hour).padStart(2, '0')}:00`;
+    
+    // Inventory Products Count
+    const totalProd = Object.values(inventory.items.products).reduce((a, b) => a + b, 0);
+    document.getElementById('stock-display').textContent = `${totalProd} Units`;
+    
+    // News & Trends
+    const newsEl = document.getElementById('active-news');
+    if (market.activeNews) {
+        newsEl.innerHTML = `<i data-lucide="trending-up"></i> ${market.activeNews.title}`;
+        newsEl.classList.add('notification');
+    }
+    
+    renderFactoryContent();
     renderMarketPrices();
 }
 
-function renderFactory() {
+function renderFactoryContent() {
     const list = document.getElementById('machine-list');
-    list.innerHTML = '';
-    
-    if (gameState.machines.length === 0) {
-        list.innerHTML = `<div class="card" onclick="openMachineShop()">+ Buy your first machine</div>`;
-    }
-    
-    gameState.machines.forEach(machine => {
-        const prod = production.activeProductions.find(p => p.machineId === machine.id);
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            <div class="card-title">${machine.name}</div>
-            <div class="card-meta">
-                <span>Efficiency: ${machine.efficiency * 100}%</span>
-                <span>${prod ? 'Processing...' : 'Idle'}</span>
-            </div>
-            ${prod ? `
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${(prod.currentTime / prod.totalTime) * 100}%"></div>
-                </div>
-            ` : `<button onclick="startProductionDialog('${machine.id}')" style="margin-top: 1rem; width: 100%;">START PRODUCTION</button>`}
-        `;
-        list.appendChild(card);
-    });
-}
+    const invList = document.getElementById('inventory-list');
+    const noBiz = document.getElementById('no-biz-message');
+    const factory = document.getElementById('factory-content');
 
-function renderInventory() {
-    const list = document.getElementById('inventory-list');
-    list.innerHTML = '';
-    
-    // Check raw materials
-    Object.entries(gameState.inventory.raw).forEach(([item, q]) => {
-        if (q > 0) list.innerHTML += `<div class="card"><div class="card-title">${item} (Raw)</div><div>Qty: ${q}</div></div>`;
-    });
-    
-    // Check parts
-    Object.entries(gameState.inventory.parts).forEach(([item, q]) => {
-        if (q > 0) list.innerHTML += `<div class="card"><div class="card-title">${item} (Part)</div><div>Qty: ${q}</div></div>`;
-    });
-    
-    // Check products
-    Object.entries(gameState.inventory.products).forEach(([item, q]) => {
-        if (q > 0) list.innerHTML += `<div class="card"><div class="card-title">${item} (Final Product)</div><div>Qty: ${q}</div></div>`;
-    });
-    
-    if (list.innerHTML === '') {
-        list.innerHTML = `<div class="card-meta">Inventory empty.</div>`;
+    if (!inventory.activeBusiness) {
+        noBiz.style.display = 'block';
+        factory.style.display = 'none';
+        return;
     }
+
+    noBiz.style.display = 'none';
+    factory.style.display = 'block';
+
+    // Simplified machinery status for prototype
+    list.innerHTML = `
+        <div class="card">
+            <div class="card-title">Production Unit 01</div>
+            <div class="card-meta">Type: Assembly Line</div>
+            <div class="progress-bar" style="width: 20%; height: 4px; margin-top: 1rem;"></div>
+        </div>
+    `;
+
+    // Inventory List with SELL options
+    invList.innerHTML = '';
+    const items = inventory.items.products;
+    Object.entries(items).forEach(([name, qty]) => {
+        if (qty > 0) {
+            const price = market.prices.products[name] || 100;
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between;">
+                    <div class="card-title" style="text-transform: capitalize;">${name}</div>
+                    <div class="stat-value">${qty}</div>
+                </div>
+                <button class="secondary" data-action="sell-init" data-item="${name}" data-price="${price}" data-type="products" style="margin-top: 1rem; width: 100%;">
+                    SELL FOR $${price}/u
+                </button>
+            `;
+            invList.appendChild(card);
+        }
+    });
 }
 
 function renderMarketPrices() {
     const container = document.getElementById('market-prices');
-    container.innerHTML = '';
+    container.innerHTML = '<h3>Raw Materials</h3>';
     
     Object.entries(market.prices.raw).forEach(([item, price]) => {
         const div = document.createElement('div');
@@ -114,136 +131,48 @@ function renderMarketPrices() {
         div.innerHTML = `
             <span style="text-transform: capitalize;">${item}</span>
             <span class="price-value">$${price}</span>
-            <span class="price-up"><i data-lucide="trending-up" size="14"></i></span>
+            <button class="secondary" data-action="buy-init" data-item="${item}" data-price="${price}" data-type="raw">BUY</button>
         `;
         container.appendChild(div);
     });
     
-    if (lucide) lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
-// Global UI Interactivity (Exposed to window for HTML click handlers)
+// Device & App Helpers
 window.toggleDevice = () => {
     const overlay = document.getElementById('device-overlay');
     overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
 };
 
-window.showApp = (appName) => {
-    const content = document.getElementById('device-content');
-    const view = document.getElementById('app-view');
-    const body = document.getElementById('app-body');
-    const title = document.getElementById('app-title');
-    
-    content.style.display = 'none';
-    view.style.display = 'block';
-    title.textContent = appName.toUpperCase();
-    
-    if (appName === 'biz-select') {
-        body.innerHTML = `
-            <p>Select your business sector:</p><br>
-            <button onclick="startGame('Furniture')">Furniture Mfg</button><br><br>
-            <button onclick="startGame('Electronics')">Electronics Mfg</button>
-        `;
-    } else if (appName === 'vehicles') {
-        body.innerHTML = `
-            <p>Your Fleet:</p><br>
-            <div class="card">
-                <div>Model: Starter Bike</div>
-                <div>Status: Available</div>
-            </div>
-        `;
-    } else {
-        body.innerHTML = `<p>App content coming soon...</p>`;
-    }
-};
-
-window.hideApp = () => {
-    document.getElementById('device-content').style.display = 'grid';
-    document.getElementById('app-view').style.display = 'none';
-    document.getElementById('app-title').textContent = 'Home';
-};
-
 window.startGame = (type) => {
-    gameState.activeBusiness = type;
-    gameState.machines = [{ id: 'machine_1', name: 'Standard Cutter', efficiency: 1.0 }];
-    gameState.inventory.raw = { wood: 10, metal: 5 };
-    gameState.notify();
-    hideApp();
+    inventory.activeBusiness = type;
+    inventory.save();
+    ui.toast(`Business Started: ${type}`, 'success');
+    updateDashboard();
     toggleDevice();
 };
 
-window.showMarketModal = () => {
-    const modal = document.getElementById('modal-container');
-    const content = document.getElementById('modal-content');
-    modal.style.display = 'flex';
+window.openShop = (shopName) => {
+    const modal = document.createElement('div');
+    modal.id = 'shop-modal';
+    modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center;';
     
-    content.innerHTML = `
-        <h2>Global Market Buy</h2>
-        <p>Buy materials via online order (Delivery fee: $20)</p>
-        <div class="card-list">
-            ${Object.entries(market.prices.raw).map(([item, price]) => `
+    modal.innerHTML = `
+        <div class="glass-panel" style="width: 500px; max-height: 80vh;">
+            <h2>${shopName}</h2>
+            <p class="stat-label">Location: Downtown Area</p>
+            <div class="card-list" style="margin-top: 1.5rem;">
                 <div class="card">
-                    <div class="card-title">${item}</div>
+                    <div class="card-title">Contract Bulk: Wood (50 units)</div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Price: $${price}/unit</span>
-                        <button onclick="buyMaterial('${item}', 10)">Buy 10</button>
+                        <span>Price: $200</span>
+                        <button data-action="buy-init" data-item="wood" data-price="4" data-type="raw">Purchase Slot</button>
                     </div>
                 </div>
-            `).join('')}
+            </div>
+            <button class="secondary" onclick="this.closest('#shop-modal').remove()" style="margin-top: 2rem;">LEAVE SHOP</button>
         </div>
     `;
-};
-
-window.buyMaterial = (item, qty) => {
-    if (market.buyRaw(item, qty)) {
-        console.log(`Bought ${qty} ${item}`);
-    } else {
-        alert("Not enough money!");
-    }
-};
-
-window.closeModal = () => {
-    document.getElementById('modal-container').style.display = 'none';
-};
-
-window.startProductionDialog = (hostId) => {
-    const modal = document.getElementById('modal-container');
-    const content = document.getElementById('modal-content');
-    modal.style.display = 'flex';
-    
-    const products = [
-        { name: 'chair_leg', type: 'parts', raw_material: 'wood', required_raw: 2, base_production_time: 10 },
-        { name: 'chair', type: 'products', raw_material: 'wood', required_raw: 8, base_production_time: 25 }
-    ];
-    
-    content.innerHTML = `
-        <h2>Select Production Task</h2>
-        <div class="card-list">
-            ${products.map(p => {
-                const itemStr = p.name; // Simpler to just pass the IDs/Names
-                return `
-                <div class="card">
-                    <div class="card-title" style="text-transform: capitalize;">${p.name.replace('_', ' ')}</div>
-                    <div>Costs: ${p.required_raw} ${p.raw_material}</div>
-                    <button onclick='window.processProd("${hostId}", "${p.name}")' style="margin-top: 0.5rem; width: 100%;">PRODUCE</button>
-                </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-};
-
-// Add a helper for processing
-window.processProd = (machineId, itemName) => {
-    const products = [
-        { name: 'chair_leg', type: 'parts', raw_material: 'wood', required_raw: 2, base_production_time: 10 },
-        { name: 'chair', type: 'products', raw_material: 'wood', required_raw: 8, base_production_time: 25 }
-    ];
-    const item = products.find(p => p.name === itemName);
-    const machine = gameState.machines.find(m => m.id === machineId);
-    if (production.startProduction(machine, item)) {
-        closeModal();
-    } else {
-        alert("Not enough raw materials!");
-    }
+    document.body.appendChild(modal);
 };

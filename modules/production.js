@@ -1,45 +1,48 @@
 /**
  * Manages production queues and machine performance.
  */
-import { gameState } from './gameState.js';
+import { inventory } from './inventory.js';
 
 export const production = {
     activeProductions: [],
     
     startProduction(machine, item) {
-        if (!gameState.inventory.raw[item.raw_material] >= item.required_raw) return false;
+        const rawQty = inventory.items.raw[item.raw_material] || 0;
+        if (rawQty < item.required_raw) return false;
         
-        gameState.removeFromInventory('raw', item.raw_material, item.required_raw);
+        inventory.items.raw[item.raw_material] -= item.required_raw;
         
         const prod = {
             id: Date.now(),
             machineId: machine.id,
             itemName: item.name,
             itemType: item.type, // parts or products
-            totalTime: item.base_production_time / machine.efficiency,
+            totalTime: item.base_production_time / (machine.efficiency || 1),
             currentTime: 0,
             status: 'processing'
         };
         
         this.activeProductions.push(prod);
-        this.update();
+        inventory.save();
         return true;
     },
     
     update() {
-        // Run production loop every second
+        if (this.intervalStarted) return;
+        this.intervalStarted = true;
+
         setInterval(() => {
             if (this.activeProductions.length === 0) return;
             
             this.activeProductions.forEach((prod, index) => {
-                prod.currentTime += 1; // 1 second intervals
+                prod.currentTime += 1;
                 
                 if (prod.currentTime >= prod.totalTime) {
-                    // Complete production
-                    gameState.addToInventory(prod.itemType, prod.itemName, 1);
+                    if (!inventory.items[prod.itemType][prod.itemName]) inventory.items[prod.itemType][prod.itemName] = 0;
+                    inventory.items[prod.itemType][prod.itemName] += 1;
+                    
                     this.activeProductions.splice(index, 1);
-                    console.log(`Produced: ${prod.itemName}`);
-                    gameState.notify();
+                    inventory.save();
                 }
             });
         }, 1000);

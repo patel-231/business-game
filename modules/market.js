@@ -1,7 +1,7 @@
 /**
- * Simulated dynamic market with price fluctuations and news API simulation.
+ * Simulated dynamic market with price fluctuations and news simulation.
  */
-import { gameState } from './gameState.js';
+import { inventory } from './inventory.js';
 
 export const market = {
     prices: {
@@ -44,33 +44,15 @@ export const market = {
                 this.applyNewsEffect(this.activeNews);
             }
             
-            gameState.notify(); // Re-render UI
+            // Save state (minimal updates for prices)
+            inventory.save();
         }, 15000); // 15s interval
     },
     
     applyNewsEffect(news) {
         if (this.prices.raw[news.target]) {
             this.prices.raw[news.target] = +(this.prices.raw[news.target] * news.multiplier).toFixed(2);
-            console.log(`News Effect Applied: ${news.title}`);
-            gameState.notify();
+            inventory.save();
         }
-    },
-    
-    buyRaw(item, qty) {
-        const cost = this.prices.raw[item] * qty;
-        if (gameState.removeMoney(cost)) {
-            gameState.addToInventory('raw', item, qty);
-            return true;
-        }
-        return false;
-    },
-    
-    sellProduct(item, qty) {
-        if (gameState.removeFromInventory('products', item, qty)) {
-            const revenue = this.prices.products[item] * qty;
-            gameState.addMoney(revenue);
-            return true;
-        }
-        return false;
     }
 };

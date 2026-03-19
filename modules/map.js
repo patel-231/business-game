@@ -8,7 +8,7 @@ export const map = {
     markers: [],
     
     initMap(containerId, apiKey) {
-        if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY") {
+        if (!apiKey || apiKey === "AIzaSyAN5qlDYKr2WGIqBuztQDpBaY1sx8L0Ao0") {
             const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div id="placeholder-map" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8;">

@@ -8,7 +8,7 @@ export const map = {
     markers: [],
     
     initMap(containerId, apiKey) {
-        if (!apiKey || apiKey === "AIzaSyAN5qlDYKr2WGIqBuztQDpBaY1sx8L0Ao0") {
+        if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY") {
             const container = document.getElementById(containerId);
             container.innerHTML = `
                 <div id="placeholder-map" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8;">
@@ -23,11 +23,6 @@ export const map = {
             return;
         }
 
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
-        script.defer = true;
-        document.head.append(script);
-        
         window.initMap = () => {
             this.gMap = new google.maps.Map(document.getElementById(containerId), {
                 center: { lat: 40.7128, lng: -74.0060 },
@@ -41,6 +36,11 @@ export const map = {
             });
             this.fetchNearbyShops();
         };
+
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
+        script.defer = true;
+        document.head.append(script);
     },
 
     addSimulatedMarkers() {

@@ -145,6 +145,44 @@ window.toggleDevice = () => {
     overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
 };
 
+window.showApp = (appName) => {
+    const content = document.getElementById('device-content');
+    const view = document.getElementById('app-view');
+    const body = document.getElementById('app-body');
+    const title = document.getElementById('app-title');
+    
+    content.style.display = 'none';
+    view.style.display = 'block';
+    title.textContent = appName.toUpperCase();
+    
+    if (appName === 'biz-select') {
+        body.innerHTML = `
+            <p>Select your business sector:</p><br>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <button onclick="startGame('Furniture')">Furniture Mfg</button>
+                <button onclick="startGame('Electronics')">Electronics Mfg</button>
+            </div>
+        `;
+    } else if (appName === 'vehicles') {
+        body.innerHTML = `
+            <p>Your Fleet:</p><br>
+            <div class="card">
+                <div>Model: Starter Bike</div>
+                <div>Status: Available</div>
+            </div>
+        `;
+    } else {
+        body.innerHTML = `<p>App contents are loading...</p>`;
+    }
+    if (window.lucide) lucide.createIcons();
+};
+
+window.hideApp = () => {
+    document.getElementById('device-content').style.display = 'grid';
+    document.getElementById('app-view').style.display = 'none';
+    document.getElementById('app-title').textContent = 'Home';
+};
+
 window.startGame = (type) => {
     inventory.activeBusiness = type;
     inventory.save();

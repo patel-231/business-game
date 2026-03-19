@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizSim | Business Empire Tycoon</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Icon Library: Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo">BIZSIM.</div>
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">Currency</span>
+                <span class="stat-value" id="money-display">$0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Stock</span>
+                <span class="stat-value" id="stock-display">0 Units</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time</span>
+                <span class="stat-value" id="time-display">Day 1 | 08:00</span>
+            </div>
+        </div>
+        <button id="open-device" class="secondary">
+            <i data-lucide="smartphone"></i> My Device
+        </button>
+    </header>
+
+    <main>
+        <!-- Factory & Inventory Panel -->
+        <section class="glass-panel" id="factory-panel">
+            <h2><i data-lucide="factory"></i> Factory</h2>
+            <div id="no-biz-message">Select a business on your device to start.</div>
+            
+            <div id="factory-content" style="display: none;">
+                <h3>Active Machines</h3>
+                <div class="card-list" id="machine-list">
+                    <!-- Machines will be injected here -->
+                </div>
+                
+                <h3 style="margin-top: 2rem;">Inventory</h3>
+                <div id="inventory-list" class="card-list">
+                    <!-- Inventory will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Map Area -->
+        <section id="map-area">
+            <div id="map-container">
+                <div id="placeholder-map">
+                    <i data-lucide="map-pin" size="48"></i>
+                    <p>Map Mode: Interactive 2D</p>
+                    <span id="map-status">Click markers to visit locations</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Market & News Panel -->
+        <section class="glass-panel" id="market-panel">
+            <h2><i data-lucide="trending-up"></i> Market</h2>
+            <div id="active-news" class="notification">
+                <i data-lucide="info"></i> No recent news.
+            </div>
+            
+            <div id="market-prices" class="market-grid" style="margin-top: 1rem;">
+                <!-- Prices will be injected here -->
+            </div>
+            
+            <button id="buy-raw-btn" style="margin-top: auto; width: 100%;">
+                <i data-lucide="shopping-cart"></i> Buy Raw Materials
+            </button>
+        </section>
+    </main>
+
+    <!-- In-Game Device (Phone/Handheld) -->
+    <div class="device-overlay" id="device-overlay" style="display: none;">
+        <div class="device-screen">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 id="app-title">Home</h3>
+                <i data-lucide="battery" size="16"></i>
+            </div>
+            
+            <div id="device-content" class="device-app">
+                <div class="app-icon" title="Shop" onclick="showApp('biz-select')">
+                    <i data-lucide="briefcase"></i>
+                </div>
+                <div class="app-icon" title="Bank" onclick="showApp('bank')">
+                    <i data-lucide="dollar-sign"></i>
+                </div>
+                <div class="app-icon" title="News" onclick="showApp('news')">
+                    <i data-lucide="rss"></i>
+                </div>
+                <div class="app-icon" title="Vehicles" onclick="showApp('vehicles')">
+                    <i data-lucide="truck"></i>
+                </div>
+                <div class="app-icon" title="Settings" onclick="showApp('settings')">
+                    <i data-lucide="settings"></i>
+                </div>
+            </div>
+            
+            <div id="app-view" style="display: none; height: 100%;">
+                <button class="secondary" onclick="hideApp()" style="margin-bottom: 1rem; padding: 0.4rem;">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <div id="app-body">
+                    <!-- Dynamic App Content -->
+                </div>
+            </div>
+
+            <div style="margin-top: auto; text-align: center; padding-top: 1rem;">
+                <div style="width: 40px; height: 4px; background: #444; margin: 0 auto; border-radius: 2px; cursor: pointer;" onclick="toggleDevice()"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Simple overlays for interactions) -->
+    <div id="modal-container" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="glass-panel" style="max-width: 500px; width: 90%; max-height: 80vh;">
+            <div id="modal-content"></div>
+            <button class="secondary" onclick="closeModal()" style="margin-top: 1.5rem;">Close</button>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+    <script>
+        // Init Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
